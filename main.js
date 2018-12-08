@@ -1,15 +1,16 @@
-function ttml2srt(data) {
+function ttml2srt(data,forceFps) {
     // get framerate
     const FPSnumMatch = data.match(/ttp:frameRate="(\d+)"/);
     const FPSmulMatch = data.match(/ttp:frameRateMultiplier="(\d+) (\d+)"/);
-    const FPSnum      = FPSnumMatch ? parseInt(FPSnumMatch[1]) : 25; // numerator
-    const FPSmul      = FPSmulMatch ? parseInt(FPSmulMatch[1]) : 1;  // multiplier
-    const FPSden      = FPSmulMatch ? parseInt(FPSmulMatch[2]) : 1;  // denominator
+    const FPSnum      = FPSnumMatch ? parseInt(FPSnumMatch[1]) : 0; // numerator
+    const FPSmul      = FPSmulMatch ? parseInt(FPSmulMatch[1]) : 1; // multiplier
+    const FPSden      = FPSmulMatch ? parseInt(FPSmulMatch[2]) : 1; // denominator
     let frameRate     = FPSnum * FPSmul / FPSden;
+    frameRate         = forceFps ? forceFps : frameRate;
     if((frameRate ^ 0) !== frameRate){
         frameRate = frameRate.toFixed(3);
     }
-    console.info(`[INFO] FRAMERATE IS ${frameRate}`);
+    console.info(`[INFO] FRAMERATE IS ${frameRate>0?frameRate:'UNKNOWN\n[WARN] TIMING MAY BE INCORRECT'}`);
     // pre build srt
     let outSrt = '', str_id = 0;
     let ptime  = '', сtime  = '';
@@ -22,6 +23,10 @@ function ttml2srt(data) {
             let end = formatSrtTime(m[2], frameRate);
             let text = m[3]
                 .replace(/(<br.*?>)+/g, '\r\n')
+                .replace(/<\/br>/g, '')
+                .replace(/&apos;/g, '\'')
+                .replace(/&quot;/g, '"')
+                .replace(/<metadata ccrow="(\d+)" cccol="(\d+)"\/>/g,'')
                 .replace(/<(\S*?) (.*?)>(.*?)<\/.*?>/g, fontRepl);
             if(text.trim() !== ''){
                 сtime = `${begin} --> ${end}`;
@@ -52,9 +57,21 @@ function ttml2srt(data) {
     return `\uFEFF${outSrt}`;
 }
 function formatSrtTime(time, frameRate) {
-    let t = time.match(/(.*):([^:]*)$/);
-    let ms = Math.floor(parseInt(t[2]) * 1000 / frameRate).toString();
-    return t[1] + ',' + ms.padStart(3, '0');
+    let t = time.match(/(\d*:\d*:\d*)(.*)$/);
+    let f = t[2]
+    if (f.length == 0) {
+        return `${t[1]},000`
+    }
+    if (f[0] === '.') {
+        let ms = f.substr(1).padEnd(3, '0').substr(0, 3)
+        return `${t[1]},${ms}`
+    }
+    if (f[0] === ':' && frameRate > 0) {
+        let ms = Math.floor(parseFloat(f.substr(1)) * 1000 / frameRate).toString();
+        return t[1] + ',' + ms.padStart(3, '0');
+    }
+    // invalid time
+    return `${t[1]},000`;
 }
 function fontRepl(str, tag, attrs, txt) {
     if (tag != 'span') {
