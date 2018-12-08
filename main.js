@@ -10,6 +10,10 @@ function ttml2srt(data,forceFps) {
     if((frameRate ^ 0) !== frameRate){
         frameRate = frameRate.toFixed(3);
     }
+    const FPSsfrMatch = data.match(/ttp:frameRate="ttp:subFrameRate="(\d+)"/);
+    const subFrameRate = FPSsfrMatch ? parseInt(FPSsfrMatch[1]) : 1;
+    const tickRateMatch = data.match(/ttp:tickRate="(\d+)"/);
+    const tickRate = tickRateMatch ? parseInt(tickRateMatch[1]) : 1;
     console.info(`[INFO] FRAMERATE IS ${frameRate>0?frameRate:'UNKNOWN\n[WARN] TIMING MAY BE INCORRECT'}`);
     // pre build srt
     let outSrt = '', str_id = 0;
@@ -19,8 +23,8 @@ function ttml2srt(data,forceFps) {
     for (let x of data.match(new RegExp(ttmlStr,'g'))) {
         let m = x.match(new RegExp(ttmlStr));
         if (m) {
-            let begin = formatSrtTime(m[1], frameRate);
-            let end = formatSrtTime(m[2], frameRate);
+            let begin = formatSrtTime(m[1], frameRate, subFrameRate, tickRate);
+            let end = formatSrtTime(m[2], frameRate, subFrameRate, tickRate);
             let text = m[3]
                 .replace(/(<br.*?>)+/g, '\r\n')
                 .replace(/<\/br>/g, '')
@@ -46,30 +50,57 @@ function ttml2srt(data,forceFps) {
         }
     }
     outSrt += `\r\n\r\n`;
-    const startTagMatch = /([^\s])<(\w)/g
+    const startTagMatch = /([^\s])<(\w)/g;
     if(outSrt.match(startTagMatch)){
-        outSrt = outSrt.replace(startTagMatch,'$1 <$2')
+        outSrt = outSrt.replace(startTagMatch,'$1 <$2');
     }
-    const endTagMatch = /<\/(\w+)>([^\s])/g
+    const endTagMatch = /<\/(\w+)>([^\s])/g;
     if(outSrt.match(endTagMatch)){
-        outSrt = outSrt.replace(endTagMatch,'</$1> $2')
+        outSrt = outSrt.replace(endTagMatch,'</$1> $2');
     }
     return `\uFEFF${outSrt}`;
 }
-function formatSrtTime(time, frameRate) {
+function formatSrtTime(time, frameRate, subFrameRate, tickRate) {
     let t = time.match(/(\d*:\d*:\d*)(.*)$/);
-    let f = t[2]
+    if (!t) {
+        t = time.match(/([0-9.]*)(.*)/);
+        const mult = {
+            'h' : 3600,           // hours
+            'm' : 60,             // minutes
+            's' : 1,              // seconds
+            'ms': 0.001,          // milliseconds
+            'f' : 1 / frameRate,  // frames
+            't' : 1 / tickRate,   // ticks
+        };
+
+        let seconds = parseFloat(t[1]) * mult[t[2]];
+        let h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+        let m = Math.floor(seconds % 3600 / 60).toString().padStart(2, '0');
+        let s = Math.floor(seconds % 60).toString().padStart(2, '0');
+        let ms = Math.round((seconds - Math.floor(seconds)) * 1000).toString().padEnd(3, '0').substr(0, 3);
+        return `${h}:${m}:${s},${ms}`;
+    }
+
+    let f = t[2];
     if (f.length == 0) {
-        return `${t[1]},000`
+        return `${t[1]},000`;
     }
+
     if (f[0] === '.') {
-        let ms = f.substr(1).padEnd(3, '0').substr(0, 3)
-        return `${t[1]},${ms}`
+        let ms = f.substr(1).padEnd(3, '0').substr(0, 3);
+        return `${t[1]},${ms}`;
     }
-    if (f[0] === ':' && frameRate > 0) {
-        let ms = Math.floor(parseFloat(f.substr(1)) * 1000 / frameRate).toString();
+
+    if (f[0] === ':') {
+        let fa = f.substr(1).split('.');
+        let frames = parseInt(fa[0]);
+        if (fa.length > 1) {
+            frames += parseInt(fa[1]) / subFrameRate;
+        }
+        let ms = Math.floor(frames * 1000 / frameRate).toString();
         return t[1] + ',' + ms.padStart(3, '0');
     }
+
     // invalid time
     return `${t[1]},000`;
 }

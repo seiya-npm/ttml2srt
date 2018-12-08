@@ -9,7 +9,7 @@ npm i ttml2srt
 
 ## Usage
 ```
-const ttml2srt = require('ttml2srt');
+const { ttml2srt } = require('ttml2srt');
 const ttml2src = <YOUR TTML STRING>;
 console.log(ttml2srt(ttml2src));
 ```
