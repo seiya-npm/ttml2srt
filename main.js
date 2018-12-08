@@ -81,7 +81,7 @@ function fontRepl(str, tag, attrs, txt) {
     for (let a of at) {
         let ax = a.match(/tts:color="(.*?)"/);
         if (ax) {
-            txt = `<font color="${ax[1]}">${txt}</font>`;
+            txt = `<font color="${ax[1]}">${txt.trim()}</font>`;
             continue;
         }
         switch (a) {
