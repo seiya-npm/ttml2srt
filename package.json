@@ -1,6 +1,6 @@
 {
     "name": "ttml2srt",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Convert TTML subtitles to SRT format.",
     "keywords": [
         "ttml",
