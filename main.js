@@ -26,7 +26,7 @@ function ttml2srt(data,forceFps) {
                 .replace(/<\/br>/g, '')
                 .replace(/&apos;/g, '\'')
                 .replace(/&quot;/g, '"')
-                .replace(/<metadata ccrow="(\d+)" cccol="(\d+)"\/>/g,'')
+                .replace(/<[^>]*\/>/g,'')
                 .replace(/<(\S*?) (.*?)>(.*?)<\/.*?>/g, fontRepl);
             if(text.trim() !== ''){
                 сtime = `${begin} --> ${end}`;
