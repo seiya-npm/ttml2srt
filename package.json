@@ -1,6 +1,6 @@
 {
     "name": "ttml2srt",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Convert TTML subtitles to SRT format.",
     "keywords": [
         "ttml",
@@ -8,7 +8,7 @@
         "subtitles",
         "subrip"
     ],
-    "author": "Seiya Loveless",
+    "author": "Seiya Dev.",
     "homepage": "https://github.com/seiya-npm/ttml2srt#readme",
     "repository": {
         "type": "git",

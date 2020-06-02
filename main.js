@@ -19,19 +19,26 @@ function ttml2srt(data,forceFps) {
     let outSrt = '', str_id = 0;
     let ptime  = '', сtime  = '';
     // build srt
-    const ttmlStr  = '<p.*?begin="([^"]*)" end="([^"]*)".*?>(.*?)</p>';
-    for (let x of data.match(new RegExp(ttmlStr,'g'))) {
+    const ttmlStr  = '<p(.*?)>(.*?)</p>';
+    for (let x of data.match(new RegExp('<p (.*?)>(.*?)</p>','g'))) {
         let m = x.match(new RegExp(ttmlStr));
-        if (m) {
-            let begin = formatSrtTime(m[1], frameRate, subFrameRate, tickRate);
-            let end = formatSrtTime(m[2], frameRate, subFrameRate, tickRate);
-            let text = m[3]
-                .replace(/(<br.*?>)+/g, '\r\n')
+        if (m && m.length == 3) {
+            let atts = m[1].trim().match(/[^\s]*="?[^"]*/g)
+                .map(x=>x.split('='))
+                .reduce((r,x)=>(r[x[0]]=x[1].replace(/^"/g,''),r),{});
+            if(!atts.begin || !atts.end){
+                console.warn('[WARN] Some string was not parsed, start/end time attribute was missing!');
+            }
+            let begin = formatSrtTime(atts.begin, frameRate, subFrameRate, tickRate);
+            let end = formatSrtTime(atts.end, frameRate, subFrameRate, tickRate);
+            let text = m[2]
                 .replace(/<\/br>/g, '')
                 .replace(/&apos;/g, '\'')
                 .replace(/&quot;/g, '"')
-                .replace(/<[^>]*\/>/g,'')
-                .replace(/<(\S*?) (.*?)>(.*?)<\/.*?>/g, fontRepl);
+                .replace(/<(\S*?) (.*?)>(.*?)<\/.*?>/g, fontRepl)
+                .replace(/<span>(.*?)<\/span>/g, '$1')
+                .replace(/(<br.*?>)+/g, '\r\n')
+                .replace(/<[^>]*\/>/g,'');
             if(text.trim() !== ''){
                 сtime = `${begin} --> ${end}`;
                 if(ptime != сtime){
@@ -47,6 +54,9 @@ function ttml2srt(data,forceFps) {
                 }
                 outSrt += `${text}`;
             }
+        }
+        else{
+            console.warn('[WARN] Some string was not parsed');
         }
     }
     outSrt += `\r\n\r\n`;
@@ -72,7 +82,6 @@ function formatSrtTime(time, frameRate, subFrameRate, tickRate) {
             'f' : 1 / frameRate,  // frames
             't' : 1 / tickRate,   // ticks
         };
-
         let seconds = parseFloat(t[1]) * mult[t[2]];
         let h = Math.floor(seconds / 3600).toString().padStart(2, '0');
         let m = Math.floor(seconds % 3600 / 60).toString().padStart(2, '0');
@@ -80,17 +89,14 @@ function formatSrtTime(time, frameRate, subFrameRate, tickRate) {
         let ms = Math.round((seconds - Math.floor(seconds)) * 1000).toString().padEnd(3, '0').substr(0, 3);
         return `${h}:${m}:${s},${ms}`;
     }
-
     let f = t[2];
     if (f.length == 0) {
         return `${t[1]},000`;
     }
-
     if (f[0] === '.') {
         let ms = f.substr(1).padEnd(3, '0').substr(0, 3);
         return `${t[1]},${ms}`;
     }
-
     if (f[0] === ':') {
         let fa = f.substr(1).split('.');
         let frames = parseInt(fa[0]);
@@ -100,7 +106,6 @@ function formatSrtTime(time, frameRate, subFrameRate, tickRate) {
         let ms = Math.floor(frames * 1000 / frameRate).toString();
         return t[1] + ',' + ms.padStart(3, '0');
     }
-
     // invalid time
     return `${t[1]},000`;
 }
