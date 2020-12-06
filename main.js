@@ -14,7 +14,8 @@ function ttml2srt(data,forceFps) {
     const subFrameRate = FPSsfrMatch ? parseInt(FPSsfrMatch[1]) : 1;
     const tickRateMatch = data.match(/ttp:tickRate="(\d+)"/);
     const tickRate = tickRateMatch ? parseInt(tickRateMatch[1]) : 1;
-    console.info(`[INFO] FRAMERATE IS ${frameRate>0?frameRate:'UNKNOWN\n[WARN] TIMING MAY BE INCORRECT'}`);
+    const fRateMsg = frameRate > 0 ? frameRate : 'UNKNOWN\n[WARN] TIMING MAY BE INCORRECT';
+    console.info(`[INFO] FRAMERATE IS ${fRateMsg}`);
     // pre build srt
     let outSrt = '', str_id = 0;
     let ptime  = '', сtime  = '';
@@ -35,10 +36,10 @@ function ttml2srt(data,forceFps) {
                 .replace(/<\/br>/g, '')
                 .replace(/&apos;/g, '\'')
                 .replace(/&quot;/g, '"')
-                .replace(/<(\S*?) (.*?)>(.*?)<\/.*?>/g, fontRepl)
                 .replace(/<span>(.*?)<\/span>/g, '$1')
                 .replace(/(<br.*?>)+/g, '\r\n')
-                .replace(/<[^>]*\/>/g,'');
+                .replace(/<[^>]*\/>/g,'')
+                .replace(/<(\S*?) (.*?)>(.*?)<\/.*?>/g, fontRepl);
             if(text.trim() !== ''){
                 сtime = `${begin} --> ${end}`;
                 if(ptime != сtime){
