@@ -87,7 +87,7 @@ function formatSrtTime(time, frameRate, subFrameRate, tickRate) {
         let h = Math.floor(seconds / 3600).toString().padStart(2, '0');
         let m = Math.floor(seconds % 3600 / 60).toString().padStart(2, '0');
         let s = Math.floor(seconds % 60).toString().padStart(2, '0');
-        let ms = Math.round((seconds - Math.floor(seconds)) * 1000).toString().padStart(3, '0');
+        let ms = Math.round((seconds - Math.floor(seconds)) * 1000).toString().padEnd(3, '0').substr(0, 3);
         return `${h}:${m}:${s},${ms}`;
     }
     let f = t[2];
@@ -95,7 +95,7 @@ function formatSrtTime(time, frameRate, subFrameRate, tickRate) {
         return `${t[1]},000`;
     }
     if (f[0] === '.') {
-        let ms = f.substr(1).padStart(3, '0');
+        let ms = f.substr(1).padEnd(3, '0').substr(0, 3);
         return `${t[1]},${ms}`;
     }
     if (f[0] === ':') {
