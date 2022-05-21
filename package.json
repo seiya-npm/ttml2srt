@@ -17,6 +17,10 @@
     "bugs": {
         "url": "https://github.com/seiya-npm/ttml2srt/issues"
     },
+    "scripts": {
+        "eslint": "eslint *.js src",
+        "eslint-fix": "eslint *.js src --fix"
+    },
     "license": "MIT",
     "main": "main.js"
 }
