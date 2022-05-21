@@ -104,8 +104,8 @@ function formatSrtTime(time, frameRate, subFrameRate, tickRate) {
         if (fa.length > 1) {
             frames += parseInt(fa[1]) / subFrameRate;
         }
-        let ms = Math.floor(frames * 1000 / frameRate).toString();
-        return t[1] + ',' + ms.padStart(3, '0');
+        let ms = Math.floor(frames * 1000 / frameRate).toString().padEnd(3, '0').substr(0, 3);
+        return `${t[1]},${ms}`;
     }
     // invalid time
     return `${t[1]},000`;
